@@ -1,0 +1,212 @@
+---
+title: "HS616 Data simulation Project"
+author: "Rashmi Manjunath"
+date: "May 9, 2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+### Data simulation to show the impact of timely antibiotic administration on outcomes in patients with severe sepsis and septic shock in the emergency department 
+
+#### Background:
+
+Severe sepsis and septic shock are severe illnesses caused by infection that can lead to death through progression of systemic inflammatory response syndrome and multiple organ failure. Mortality rates are reported to range from 20% to 50%, and with the recent steady rise in incidence rates, there is increasing emphasis on early and active treatment of sepsis. Proper treatment of the infection source is vital for effective and prompt treatment of patients with severe sepsis and septic shock. Early antibiotic treatment is a particularly crucial element. In patients with septic shock or severe sepsis, a delay in antibiotic administration from the time when hypotension first appears is significantly associated with increased mortality rates. 
+
+#### Introduction:
+
+A retrospective study - *Impact of timely antibiotic administration on outcomes in patients with severe sepsis and septic shock in the emergency department* from Young Min Joo et. al aims to investigate the effect of timely antibiotic administration on outcomes in patients with severe sepsis and septic shock. They use Multivariable logistic and linear regression analyses to assess associations between timely administration of antibiotics and outcomes, including hospital mortality, 48-hour change in Sequential Organ Failure Assessment (SOFA) score (delta SOFA), and hospital length of stay (LOS). In the study, early antibiotic use is defined as administration of a broad-spectrum antibiotic within three hours from the time of ED arrival and patients are classified into early and delayed groups based on this criteria.
+
+Conforming to the aforementioned study, data is synthesized for the following features. 
+
+* Age	
+* Gender
+* Comorbidities
+    + Malignancy 	
+    + Hypertension 	
+    + Diabetes 132 (22.3)	
+* Infection sites
+    + Intra-abdominal infection
+    + Pneumonia
+    + Urinary tract infection
+    + Others
+* Initial serum lactate (mmol/L) 
+* APACHE II score 
+* Targets of initial resuscitation
+    + CVP greater than or equal to 8 mmHg achieved
+    + ScvO2 greater than or equal to 70% achieved
+
+#### Method:
+
+For the continuous variables - age and Targets of initial resuscitation (cvp and scvo2), sample size, median and interquartile ranges are used to simulate the data. MOre specifically, the standard deviation is calculated using sample size and interquartile ranges using the formula derived by * Wan, Xiang, Wenqian Wang, Jiming Liu, and Tiejun Tong. 2014.* Further, median itself is used as mean since sample size N ~ 600. Dichotomus and Categorical variables are simulated using the respective probabilities provided in the paper. Data is simulated separately for patients with early antibiotic administration and those with a delay. The below code shows the simulation process followed for the early group. 
+
+```{r}
+set.seed(101)
+N1 = 377     # number of patients in the early group/ derived from the reference paper
+age <- round(rnorm(N1, 65, 13.3))
+gender <-
+        sample(c("Male", "Female"),
+               N1,
+               replace = TRUE,
+               prob = c(.56, .44))#Female and Male
+Chr_renal_dis <-
+        sample(c(1, 0), N1, replace = TRUE, prob = c(.04, .96))
+Chr_hep_dis <-
+        sample(c(1, 0), N1, replace = TRUE, prob = c(.09, .91))
+Malignancy <- sample(c(1, 0), N1, replace = TRUE, prob = c(.59, .4))
+Inf_site <-
+        as.factor(sample(
+                c("abdomen", "Pneumonia", "uti", "others"),
+                N1,
+                replace = TRUE,
+                prob = c(.37, .29, .17, .18)
+        ))
+isl <- rnorm(N1, 4.8, 1.8)
+apache_score <- rnorm(N1, 15, 6.7)
+cvp <- sample(c(1, 0), N1, replace = TRUE, prob = c(.55, .45))
+cvo2 <- sample(c(1, 0), N1, replace = TRUE, prob = c(.55, .45))
+response_time <- rep(0, N1)
+
+early_group <-
+        data.frame(
+                age,
+                gender,
+                Chr_renal_dis,
+                Chr_hep_dis,
+                Malignancy,
+                Inf_site,
+                isl,
+                apache_score,
+                cvp,
+                cvo2,
+                response_time
+        )
+```
+
+
+Similar to the above, data is simulated for the delayed group. 
+```{r, include=FALSE}
+N2 = 214  # number of patients in the delayed group/ derived from the reference paper
+age <- round(rnorm(N2, 67, 12))
+gender <-
+        sample(c("Male", "Female"),
+               N2,
+               replace = TRUE,
+               prob = c(.56, .44))#Female and Male
+Chr_renal_dis <-
+        sample(c(1, 0), N2, replace = TRUE, prob = c(.04, .96))
+Chr_hep_dis <-
+        sample(c(1, 0), N2, replace = TRUE, prob = c(.09, .91))
+Malignancy <- sample(c(1, 0), N2, replace = TRUE, prob = c(.59, .4))
+Inf_site <-
+        sample(
+                c("abdomen", "Pneumonia", "uti", "others"),
+                N2,
+                replace = TRUE,
+                prob = c(.46, .27, .15, .16)
+        )
+isl <- rnorm(N2, 5, 1.5)
+apache_score <- rnorm(N2, 14, 6)
+cvp <- sample(c(1, 0), N2, replace = TRUE, prob = c(.55, .45))
+cvo2 <- sample(c(1, 0), N2, replace = TRUE, prob = c(.55, .45))
+response_time <- rep(1, N2)
+
+delayed_group <-
+        data.frame(
+                age,
+                gender,
+                Chr_renal_dis,
+                Chr_hep_dis,
+                Malignancy,
+                Inf_site,
+                isl,
+                apache_score,
+                cvp,
+                cvo2,
+                response_time
+        )
+```
+
+
+The data so generated are combined and the first few rows are printed.
+```{r}
+final.data <- rbind(early_group, delayed_group)
+head(final.data)
+```
+
+Using the odds ratios provided in the paper for significant predictor variables, corresponding coefficients are calculated which are further used to simulate the in hospital mortality rate, our first outcome.
+
+```{r}
+# get the coeffs
+beta1 <- log(0.54) 
+beta2 <- log(1.06)
+beta3 <- log(1.2)
+
+# using a linear combination of significant predictors calculate the overall probability 
+logistic <- function(t)
+        1 / (1 + exp(-t))
+linpred <-
+        beta1 * final.data$response_time + beta2 * final.data$apache_score +
+        beta3 * final.data$isl
+
+prob <- logistic(linpred)
+final.data$mortality <-
+        as.factor(ifelse(runif(length(prob)) < prob, 0, 1))
+```
+
+The plots below clearly indicate the differences between the two patient groups.
+
+Higher levels of serum lactate and APACHE II score both indicative of severe sepsis/ septic shock are associated with patient mortality.
+
+```{r, echo=FALSE}
+library(gridExtra)
+library(ggplot2)
+
+g1 <- ggplot(final.data, aes(x = mortality, y = apache_score, fill = mortality)) +
+        geom_boxplot() +
+        ylab("APACHE II score") + scale_x_discrete(labels = c("1" = "alive",  "0" = "dead"))
+
+g2 <- ggplot(final.data, aes(x = mortality, y = isl, fill = mortality)) +
+        geom_boxplot() +
+        ylab("Initial serum lactate (mmol/L)") +
+        scale_x_discrete(labels = c("1" = "alive",  "0" = "dead"))
+
+grid.arrange(g1, g2, nrow= 2, top = "Distribution of Mortality by Apache Score II and ISL ")
+
+
+```
+
+
+Most of the patients had Intra adbdomenal infections, followed by Pneumonia and UTI and others. 
+
+```{r, echo=FALSE}
+ggplot(final.data, aes(x = Inf_site, fill = Inf_site )) +
+        geom_bar() + ggtitle("Distribution of Infection sites")
+``` 
+
+
+The significant effect of timely antibiotic administration on Mortality is indicated in the below plot in accordance with the study. Out of 377 patients who received early antibiotic administration, we see an in-hospital mortality rate of nearly 16 percent and for the delayed group comprising of 214 patients, it is 24 percent.
+
+```{r, echo=FALSE}
+ggplot(final.data, aes(as.factor(response_time), ..count..)) + 
+        geom_bar(aes(fill = mortality), position = "dodge") + 
+        ggtitle("Relationship between Mortality and Early/Delayed Response") +
+        scale_x_discrete(labels=c("0" = "early",  "1" = "delayed"))
+```
+
+
+
+#### Results and Conclusion:
+
+Fitting a logisic regression model on the simulated data, we see that the coefficients and p-values generated for the significant predictors are very similar to that obtained in the study stressing the fact that early antibiotic administration reduces the likelihood of patient mortaility.
+
+```{r}
+mod <-
+        glm(mortality ~ response_time + apache_score + isl,
+            data = final.data,
+            family = "binomial")
+summary(mod)
+```
+
+
