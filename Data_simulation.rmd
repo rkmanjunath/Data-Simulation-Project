@@ -3,9 +3,15 @@ title: "HS616 Data simulation Project"
 author: "Rashmi Manjunath"
 date: "May 9, 2017"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
+#### References:
+
+1. Joo, Young Min et al. "Impact Of Timely Antibiotic Administration On Outcomes In Patients With     Severe Sepsis And Septic Shock In The Emergency Department". Clinical and Experimental Emergency    Medicine 1.1 (2014): 35-40. Web. 9 May 2017.
+2. Wan, Xiang et al. "Estimating The Sample Mean And Standard Deviation From The Sample Size,         Median, Range And/Or Interquartile Range". BMC Medical Research Methodology 14.1 (2014): n. pag.    Web. 9 May 2017. 
+3. "Logistic Regression - Simulation For A Power Calculation.". R-bloggers. N.p., 2010. Web. 8 May    2017.
+
 
 
 ### Data simulation to show the impact of timely antibiotic administration on outcomes in patients with severe sepsis and septic shock in the emergency department 
